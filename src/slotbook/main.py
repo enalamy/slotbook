@@ -25,33 +25,20 @@ def main():
 
         match command:
             case "1":
-                while True:
-                    print("Укажите название комнаты: ")
-                    temp_name = input().strip()
-                    if not temp_name:
-                        print("Название не может быть пустым")
-                        continue
-                    if any(current_room.name.casefold() == temp_name.casefold()
-                        for current_room in rooms_by_id.values()):
-                        print("Это имя уже используется")
-                    else:
-                        break
-
+                name = input("Укажите название комнаты: ")
+                capacity = input("Укажите вместимость комнаты: ")
                 while True:
                     try:
-                        temp_capacity = (int(input("Укажите вместимость комнаты: ")))
-                    except ValueError:
-                        print("Введите целое число")
-                        continue
-                    if temp_capacity <= 0:
-                        print("Вместимость должна быть больше 0")
-                        continue
-                    
-                    break
-
-                temp_obj = room.Room(temp_name, temp_capacity)
-                rooms_by_id[temp_obj.id] = temp_obj
-                print(f"Комната создана. ID: {temp_obj.id}")
+                        new_room = room.add_room(name, capacity, rooms_by_id)
+                    except room.RoomNameError as error:
+                        print(error)
+                        name = input("Укажите название комнаты: ")
+                    except room.RoomCapacityError as error:
+                        print(error)
+                        capacity = input("Укажите вместимость комнаты: ")
+                    else:
+                        print((f"Комната создана. ID: {new_room.id}"))
+                        break
                 
             case "2":
                 if not rooms_by_id:
