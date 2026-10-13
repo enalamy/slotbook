@@ -1,9 +1,12 @@
 from slotbook import room
+from slotbook import slot 
+
 
 
 def main():
 
     rooms_by_id = {}
+    slots_by_id = {}
     while True: #не забудь убрать менюшку из цикла потом
         
         print("""
@@ -47,9 +50,115 @@ def main():
                     for temp_id, temp_value in rooms_by_id.items():
                         print(f"Комната{temp_id}:\n\tНазвание: {temp_value.name}\n\tВместимость: {temp_value.capacity}")
             case "3":
-                print("Скоро")
+                if not rooms_by_id:
+                    print("Сначала добавьте хотя бы одну комнату")
+                else:
+                    room_id = None
+                    starts_at = None
+
+                    while True:
+                        if room_id is None:
+                            try:
+                                room_id = int(input("ID комнаты: "))
+                            except ValueError:
+                                print("Введите целое число")
+                                continue
+
+                        try:
+                            if starts_at is None:
+                                starts_at = slot.parse_slot_datetime(
+                                    input(
+                                        "Введите дату и время в формате dd mm yyyy hh: "
+                                    )
+                                )
+
+                            new_slot = slot.add_slot(
+                                room_id, starts_at, rooms_by_id, slots_by_id
+                            )
+
+                        except slot.SlotRoomError as error:
+                            print(error)
+                            room_id = None
+
+                        except slot.SlotDateTimeError as error:
+                            print(error)
+                            starts_at = None
+
+                        except slot.SlotDuplicateError as error:
+                            print(error)
+                            print("Выберите другое время для этой комнаты")
+                            starts_at = None
+
+                        else:
+                            print(f"Слот создан. ID: {new_slot.id}")
+                            print(f"Начало: {new_slot.starts_at:%d.%m.%Y %H:%M}")
+                            print(f"Конец: {new_slot.ends_at:%d.%m.%Y %H:%M}")
+                            break
+
             case "4":
-                print("Скоро")
+                if not slots_by_id:
+                    print("Сначала создайте хотя бы один слот")
+                else:
+                    while True:
+                        try:
+                            user_date = slot.parse_slot_date(
+                                input("Введите дату в формате дд мм гггг: ")
+                            )
+                        except slot.SlotDateTimeError as error:
+                            print(error)
+                        else:
+                            break
+
+                    while True:
+                        user_room = input(
+                            "Введите ID комнаты "
+                            "или нажмите Enter для поиска по всем комнатам: ").strip()
+
+                        if user_room == "":
+                            room_id = None
+                        else:
+                            try:
+                                room_id = int(user_room)
+                            except ValueError:
+                                print("Введите целое число")
+                                continue
+
+                        try:
+                            selected_slots = slot.find_free_slots(
+                                user_date,
+                                rooms_by_id,
+                                slots_by_id,
+                                room_id,
+                            )
+                        except slot.SlotRoomError as error:
+                            print(error)
+                            continue
+
+                        break
+
+                    if not selected_slots:
+                        if room_id is None:
+                            print("Нет свободных слотов на выбранную дату")
+                        else:
+                            print(
+                                "Для этой комнаты нет свободных слотов "
+                                "на выбранную дату"
+                            )
+                    else:
+                        print(
+                            f"{'ID':<5} | {'Комната':<24} | "
+                            f"{'Начало':<16} | {'Конец':<16}"
+                        )
+                        print("-" * 70)
+
+                        for info in selected_slots:
+                            print(
+                                f"{info.id:<5} | "
+                                f"{rooms_by_id[info.room_id].name:<24} | "
+                                f"{info.starts_at:%d.%m.%Y %H:%M} | "
+                                f"{info.ends_at:%d.%m.%Y %H:%M}"
+                            )
+
             case "5":
                 print("Скоро")
             case "6":

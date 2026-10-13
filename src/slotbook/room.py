@@ -59,8 +59,7 @@ def add_room(name, capacity, rooms_by_id):
     except ValueError:
         raise RoomCapacityError("Вместимость должна быть целым числом") from None
 
-    if any(current_room.name.casefold() == name.casefold()
-        for current_room in rooms_by_id.values()):
+    if any(current_room.name.casefold() == name.casefold() for current_room in rooms_by_id.values()):
         raise RoomNameError("Комната с таким названием уже существует")
     
     temp_obj = Room(name, capacity)
