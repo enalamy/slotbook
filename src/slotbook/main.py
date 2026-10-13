@@ -1,13 +1,15 @@
 from slotbook import room
 from slotbook import slot 
+from slotbook import booking
 
 
 
 def main():
 
+    bookings_by_id = {}
     rooms_by_id = {}
     slots_by_id = {}
-    while True: #не забудь убрать менюшку из цикла потом
+    while True: 
         
         print("""
         SlotBook — бронирование переговорных
@@ -95,7 +97,7 @@ def main():
                             print(f"Конец: {new_slot.ends_at:%d.%m.%Y %H:%M}")
                             break
 
-            case "4":
+            case "4": #исправить
                 if not slots_by_id:
                     print("Сначала создайте хотя бы один слот")
                 else:
@@ -128,6 +130,7 @@ def main():
                                 user_date,
                                 rooms_by_id,
                                 slots_by_id,
+                                bookings_by_id,
                                 room_id,
                             )
                         except slot.SlotRoomError as error:
@@ -160,9 +163,58 @@ def main():
                             )
 
             case "5":
-                print("Скоро")
+                if not slots_by_id:
+                    print("Сначала создайте хотя бы один слот")
+                else:
+                    while True:
+                        worker_name = input("Введите имя работника для которого производится бронирование: ").strip()
+                        if worker_name == "":
+                            print("Ошбика: имя не может быть пустым\n")
+                            continue
+                        break
+                    while True:
+                        text = input("Введите ID слота для бронирования бронирования или Enter для возврата в меню: ").strip()
+                        if text == "":
+                            break
+                        try:
+                            user_slot_id = int(text)
+                        except ValueError:
+                            print("Ошибка: введите целое число\n")
+                            continue
+                        if user_slot_id not in slots_by_id:
+                            print("Ошибка: слота с этим ID не существует\n")
+                            continue 
+                        try:
+                            new_booking = booking.add_booking(user_slot_id, worker_name, bookings_by_id, slots_by_id)
+                        except ValueError as error:
+                            print(error)
+                            continue
+                        print(f"Бронирование №{new_booking.id}\n {worker_name} - {rooms_by_id[slots_by_id[user_slot_id].room_id].name}, {slots_by_id[user_slot_id].starts_at.date()}, {slots_by_id[user_slot_id].starts_at:%H:%M} - {slots_by_id[user_slot_id].ends_at:%H:%M}")
+                        break
+
             case "6":
-                print("Скоро")
+                if not bookings_by_id:
+                    print("Сначала забронируйте хотя бы один слот")
+                else:
+                    while True:
+                        text = input("Введите ID бронирования для отмены или Enter для возврата в меню: ").strip()
+                        if text == "":
+                            break
+                        try:
+                            user_book_id = int(text)
+                        except ValueError:
+                            print("Ошибка: введите целое число\n")
+                            continue
+                        if user_book_id not in bookings_by_id:
+                            print("Ошибка: бронирования с этим ID не существует\n")
+                            continue 
+                        try:
+                            booking.cancel_booking(user_book_id, bookings_by_id, slots_by_id)
+                        except ValueError as error:
+                            print(error)
+                            continue
+                        print(f"Бронирование №{user_book_id} отменено\n Слот снова доступен")
+                        break
             case "7":
                 print("Скоро")
             case "8":
