@@ -54,10 +54,15 @@ class RoomCapacityError(ValueError):
 def add_room(name, capacity, rooms_by_id):
     name = name.strip()
     
-    try:
-        capacity = int(capacity)
-    except ValueError:
-        raise RoomCapacityError("Вместимость должна быть целым числом") from None
+    if isinstance(capacity, str):
+        try:
+            capacity = int(capacity)
+        except ValueError:
+            raise RoomCapacityError(
+                "Вместимость должна быть целым числом"
+            ) from None
+    elif isinstance(capacity, bool) or not isinstance(capacity, int):
+        raise RoomCapacityError("Вместимость должна быть целым числом")
 
     if any(current_room.name.casefold() == name.casefold() for current_room in rooms_by_id.values()):
         raise RoomNameError("Комната с таким названием уже существует")

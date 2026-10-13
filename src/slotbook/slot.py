@@ -70,7 +70,14 @@ def parse_slot_datetime(text):
 def add_slot(room_id, starts_at, rooms_by_id, slots_by_id):
     if room_id not in rooms_by_id:
         raise SlotRoomError(f"Комната с ID {room_id} не существует")
-    
+
+    if (
+        starts_at.minute != 0
+        or starts_at.second != 0
+        or starts_at.microsecond != 0
+    ):
+        raise SlotDateTimeError("Слот должен начинаться в начале часа")
+        
     if starts_at <= datetime.now():
         raise SlotDateTimeError("Слот должен быть в будущем")
 
@@ -109,6 +116,7 @@ def find_free_slots(
     selected_date,
     rooms_by_id,
     slots_by_id,
+    bookings_by_id,
     room_id=None,
 ):
     if room_id is not None and room_id not in rooms_by_id:
@@ -125,6 +133,13 @@ def find_free_slots(
             continue
 
         if room_id is not None and current_slot.room_id != room_id:
+            continue
+
+        if any(
+            current_booking.slot_id == current_slot.id
+            and current_booking.status == "active"
+            for current_booking in bookings_by_id.values()
+        ):
             continue
 
         found_slots.append(current_slot)
