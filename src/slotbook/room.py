@@ -1,11 +1,22 @@
 class Room:
+    _next_id = 1
 
-    _next_id = 1 
-    def __init__(self, name, capacity):
+    def __init__(self, name, capacity, room_id=None):
         self.name = name
         self.capacity = capacity
-        self.__id = Room._next_id
-        Room._next_id += 1
+
+        if room_id is None:
+            room_id = Room._next_id
+
+        if (
+            isinstance(room_id, bool)
+            or not isinstance(room_id, int)
+            or room_id <= 0
+        ):
+            raise ValueError("ID комнаты должен быть положительным целым числом")
+
+        self.__id = room_id
+        Room._next_id = max(Room._next_id, room_id + 1)
 
     @property
     def id(self):

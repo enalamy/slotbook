@@ -12,12 +12,26 @@ class SlotDuplicateError(ValueError):
     pass
 
 class Slot:
-    _next_id = 1 
-    def __init__(self, room_id, starts_at):
-        self.__id = Slot._next_id
-        Slot._next_id += 1
+    _next_id = 1
+
+    def __init__(self, room_id, starts_at, slot_id=None):
+        if slot_id is None:
+            slot_id = Slot._next_id
+
+        if (
+            isinstance(slot_id, bool)
+            or not isinstance(slot_id, int)
+            or slot_id <= 0
+        ):
+            raise ValueError(
+                "ID слота должен быть положительным целым числом"
+            )
+
+        self.__id = slot_id
         self.starts_at = starts_at
         self.__room_id = room_id
+
+        Slot._next_id = max(Slot._next_id, slot_id + 1)
 
     @property
     def id(self):
