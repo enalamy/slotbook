@@ -1,14 +1,21 @@
-from slotbook import room
-from slotbook import slot 
-from slotbook import booking
-
+from slotbook import room, slot, booking, forjson
+import csv
+from pathlib import Path
 
 
 def main():
 
+    state_path = Path("exports") / "slobook.json"
     bookings_by_id = {}
     rooms_by_id = {}
     slots_by_id = {}
+    try:
+        forjson.load_state(
+            state_path, rooms_by_id, slots_by_id, bookings_by_id
+        )
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"Не удалось загрузить состояние: {error}")
+        return
     while True: 
         
         print("""
@@ -43,6 +50,15 @@ def main():
                         capacity = input("Укажите вместимость комнаты: ")
                     else:
                         print((f"Комната создана. ID: {new_room.id}"))
+                        try:
+                            forjson.save_state(
+                                state_path, rooms_by_id, slots_by_id, bookings_by_id
+                            )
+                        except OSError as error:
+                            print(
+                                "Изменение осталось в памяти, "
+                                f"но сохранить его в файл не удалось: {error}"
+                            )
                         break
                 
             case "2":
@@ -95,9 +111,19 @@ def main():
                             print(f"Слот создан. ID: {new_slot.id}")
                             print(f"Начало: {new_slot.starts_at:%d.%m.%Y %H:%M}")
                             print(f"Конец: {new_slot.ends_at:%d.%m.%Y %H:%M}")
+                            try:
+                                forjson.save_state(
+                                    state_path, rooms_by_id, slots_by_id, bookings_by_id
+                                )
+                            except OSError as error:
+                                print(
+                                    "Изменение осталось в памяти, "
+                                    f"но сохранить его в файл не удалось: {error}"
+                                )
                             break
+                
 
-            case "4": #исправить
+            case "4": 
                 if not slots_by_id:
                     print("Сначала создайте хотя бы один слот")
                 else:
@@ -190,8 +216,17 @@ def main():
                             print(error)
                             continue
                         print(f"Бронирование №{new_booking.id}\n {worker_name} - {rooms_by_id[slots_by_id[user_slot_id].room_id].name}, {slots_by_id[user_slot_id].starts_at.date()}, {slots_by_id[user_slot_id].starts_at:%H:%M} - {slots_by_id[user_slot_id].ends_at:%H:%M}")
+                        try:
+                            forjson.save_state(
+                                state_path, rooms_by_id, slots_by_id, bookings_by_id
+                            )
+                        except OSError as error:
+                            print(
+                                "Изменение осталось в памяти, "
+                                f"но сохранить его в файл не удалось: {error}"
+                            )
                         break
-
+                
             case "6":
                 if not bookings_by_id:
                     print("Сначала забронируйте хотя бы один слот")
@@ -214,11 +249,57 @@ def main():
                             print(error)
                             continue
                         print(f"Бронирование №{user_book_id} отменено\n Слот снова доступен")
+                        try:
+                            forjson.save_state(
+                                state_path, rooms_by_id, slots_by_id, bookings_by_id
+                            )
+                        except OSError as error:
+                            print(
+                                "Изменение осталось в памяти, "
+                                f"но сохранить его в файл не удалось: {error}"
+                            )
                         break
+                
             case "7":
-                print("Скоро")
+                if not bookings_by_id:
+                    print("Сначала забронируйте хотя бы один слот")
+                else:
+                    history = booking.get_booking_history(bookings_by_id)
+
+                    for current_booking in history:
+                        if current_booking.cancelled_at is None:
+                            cancelled_text = "—"
+                        else:
+                            cancelled_text = current_booking.cancelled_at.strftime("%d.%m.%Y %H:%M:%S")
+                        print(f"Бронь №{current_booking.id}\n"
+                        f"Имя: {current_booking.worker_name}\n"
+                        f"Комната: {rooms_by_id[slots_by_id[current_booking.slot_id].room_id].name}\n"
+                        f"Начало брони: {slots_by_id[current_booking.slot_id].starts_at}\n"
+                        f"Конец брони: {slots_by_id[current_booking.slot_id].ends_at}\n"
+                        f"Статус: {current_booking.status}\n"
+                        f"Создана: {current_booking.created_at:%d.%m.%Y %H:%M:%S}\n"
+                        f"Отменена: {cancelled_text}")
             case "8":
-                print("Скоро")
+                filename = input("Имя файла, Enter — history.csv: ").strip() or "history.csv"
+
+                path = Path("exports") / filename
+
+                if path.exists():
+                    answer = input(
+                        f"Файл {path} существует. Перезаписать? да/нет: "
+                    ).strip().casefold()
+
+                    if answer != "да":
+                        print("Экспорт отменён")
+                        continue
+
+                try:
+                    count = booking.export_booking_history(path, bookings_by_id, slots_by_id, rooms_by_id)
+                except Exception as error:
+                    print(f"Экспорт не выполнен: {error}")
+                else:
+                    print(f"Файл: {path}")
+                    print(f"Экспортировано записей: {count}")
             case "0":
                 break
             case _:
