@@ -7,6 +7,7 @@ wheels/
 *.egg-info
 /tests/
 /data/slotbook.json
+/exports/
 
 # Virtual environments
 .venv
